@@ -13,17 +13,23 @@ webpush.setVapidDetails(
 )
 
 export async function POST(request: NextRequest) {
-  const subscription = (await request.json()) as PushSubscription | null
+  try {
+    const subscription = (await request.json()) as PushSubscription | null
 
-  if (!subscription) {
-    console.error('No subscription was provided!')
-    return
+    if (!subscription) {
+      console.error('No subscription was provided!')
+      return NextResponse.json({ message: 'error', error: 'No subscription provided' }, { status: 400 })
+    }
+
+    const updatedDb = await saveSubscriptionToDb(subscription)
+
+    return NextResponse.json({ message: 'success', updatedDb })
+  } catch (error) {
+    console.error('Error processing subscription:', error)
+    return NextResponse.json({ message: 'error', error: 'Internal server error' }, { status: 500 })
   }
-
-  const updatedDb = await saveSubscriptionToDb(subscription)
-
-  return NextResponse.json({ message: 'success', updatedDb })
 }
+
 
 export async function GET(_: NextRequest) {
   const subscriptions = await getSubscriptionsFromDb()
